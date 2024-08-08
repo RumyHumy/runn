@@ -8,9 +8,11 @@
 
 #include "runn.h"
 
-// NET
+/* Neural Network */
 
-// ACTIV
+/*
+ *  NN -> Net -> Activation Functions
+ */
 
 // Linear
 float ActivLinear(float val)
@@ -58,7 +60,10 @@ float ActivReLUDeriv(float val)
 	return (val >= 0.0 ? 1.0 : 0.0);
 }
 
-// LOSS
+/*
+ *  NN -> Net -> Loss Functions
+ */
+
 float LossMSE(size_t size, float act[], float exp[])
 {
 	float sum = 0;
@@ -73,7 +78,10 @@ void LossMSEDeriv(size_t size, float act[], float exp[], float out[])
 		out[i] = 2.0*(act[i]-exp[i])/size;
 }
 
-// LAYER 
+/*
+ *  NN -> Net -> Layer
+ */
+
 bool NetLayerAlloc(NetLayer *layer, size_t size, size_t nextSize, NetActiv activ)
 {
 	*layer = (NetLayer){
@@ -213,11 +221,13 @@ void NetForward(Net *net, float in[], float out[])
 		if (net->layers[l].size > maxLayerSize)
 			maxLayerSize = net->layers[l].size;
 
+	// Create the overshoot matrix
 	float *buffer = malloc(maxLayerSize*sizeof(*buffer));
 
 	for (size_t i = 0; i < net->layers[0].size; i++)
 		buffer[i] = in[i];
 
+	// Feed forward
 	for (size_t l = 0; l < net->lcount-1; l++)
 		NetLayerForward(&net->layers[l], buffer, buffer);
 

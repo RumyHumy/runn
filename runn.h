@@ -3,9 +3,12 @@
 
 #include <stddef.h>
 
-// NET (NEURAL NETWORK)
 
-// *ACTIV*
+/* Neural Network */
+
+/*
+ *  NN -> Net -> Activation Functions
+ */
 
 typedef struct NetActiv
 {
@@ -36,12 +39,16 @@ float ActivReLU(float val);
 float ActivReLUDeriv(float val);
 #define ACTIV_RELU (NetActiv){ActivReLU,ActivReLUDeriv}
 
-// *LOSS*
+/*
+ *  NN -> Net -> Loss Functions
+ */
 
 float LossMSE(size_t size, float act[], float exp[]);
 void LossMSEDeriv(size_t size, float act[], float exp[], float out[]);
 
-// *LAYER*
+/*
+ *  NN -> Net -> Layer
+ */
 
 typedef struct NetLayer
 {
@@ -65,7 +72,9 @@ bool NetLayerForward(NetLayer *layer, float in[], float out[]);
 // Can NOT be in == out
 bool NetLayerBackwardGD(NetLayer *layer, float gradOut[], float gradIn[], float lrate);
 
-// *NET*
+/*
+ *  NN -> NET
+ */
 
 typedef struct Net
 {
