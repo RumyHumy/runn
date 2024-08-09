@@ -10,9 +10,9 @@
 
 /* Neural Network */
 
-/*
- *  NN->Net->Activation
- */
+// -------------------
+// NN->Net->Activation
+// -------------------
 
 // Linear
 float ActivLinear(float val)
@@ -60,9 +60,9 @@ float ActivReLUDeriv(float val)
 	return (val >= 0.0 ? 1.0 : 0.0);
 }
 
-/*
- *  NN->Net->Loss
- */
+// -------------
+// NN->Net->Loss
+// -------------
 
 float LossMSE(size_t size, float act[], float exp[])
 {
@@ -78,25 +78,25 @@ void LossMSEDeriv(size_t size, float act[], float exp[], float out[])
 		out[i] = 2.0*(act[i]-exp[i])/size;
 }
 
-/*
- *  NN->Net->Layer
- */ 
+// --------------
+// NN->Net->Layer
+// --------------
 
-bool NetLayerAlloc(NetLayer *layer, size_t size, size_t nextSize, NetActiv activ)
+bool NetLayerAlloc(NetLayer *layer, NetLayerParams params, size_t nextSize)
 {
 	*layer = (NetLayer){
-		.size     = size,
+		.size     = params.size,
 		.nextSize = nextSize,
 		.weights  = NULL,
 		.biases   = NULL,
-		.denseIn  = calloc(size,     sizeof(*layer->denseIn)),
-		.activIn  = calloc(nextSize, sizeof(*layer->activIn)),
-		.activ    = activ };
+		.denseIn  = calloc(params.size, sizeof(*layer->denseIn)),
+		.activIn  = calloc(nextSize,    sizeof(*layer->activIn)),
+		.activ    = params.activ };
 
 	if (nextSize != 0)
 	{
-		layer->weights = calloc(nextSize*size, sizeof(*layer->weights));
-		layer->biases  = calloc(nextSize,      sizeof(*layer->biases));
+		layer->weights = calloc(nextSize*params.size, sizeof(*layer->weights));
+		layer->biases  = calloc(nextSize,             sizeof(*layer->biases));
 		
 		return
 			   layer->weights
@@ -168,12 +168,14 @@ bool NetLayerBackwardGD(NetLayer *layer, float gradOut[], float gradIn[], float 
 	free(gradDenseOut);
 }
 
+// -------
+// NN->Net
+// -------
 
 bool NetAlloc(
 	Net *net,
 	size_t lcount,
-	size_t lsizes[],
-	NetActiv activs[])
+	NetLayerParams lparams[])
 {
 	*net = (Net){
 		.lcount = lcount,
@@ -187,9 +189,8 @@ bool NetAlloc(
 	{
 		if (!NetLayerAlloc(
 			net->layers+i,
-			lsizes[i],
-			(i != net->lcount-1 ? lsizes[i+1] : 0),
-			(i != net->lcount-1 ? activs[i]   : ACTIV_NULL)))
+			lparams[i],
+			(i != net->lcount-1 ? lparams[i+1].size : 0)))
 		{
 			for (int j = 0; j < i; j++)
 				NetLayerFree(net->layers+i);

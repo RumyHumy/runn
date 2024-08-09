@@ -75,9 +75,9 @@ bool UTNetLayerAllocFree()
 
 	NetLayer layer1, layer2, layer3;
 	if (
-		   !NetLayerAlloc(&layer1, 3, 4, ACTIV_LINEAR)
-		|| !NetLayerAlloc(&layer2, 2, 3, ACTIV_SIGMOID)
-		|| !NetLayerAlloc(&layer3, 5, 5, ACTIV_RELU))
+		   !NetLayerAlloc(&layer1, (NetLayerParams){3, ACTIV_LINEAR}, 4)
+		|| !NetLayerAlloc(&layer2, (NetLayerParams){2, ACTIV_SIGMOID}, 3)
+		|| !NetLayerAlloc(&layer3, (NetLayerParams){5, ACTIV_RELU}, 5))
 		goto cleanup;
 
 	flag =
@@ -106,9 +106,9 @@ bool UTNetLayerForward()
 {
 	NetLayer layer1, layer2, layer3;
 	if (
-		   !NetLayerAlloc(&layer1, 1, 1, ACTIV_LINEAR)
-		|| !NetLayerAlloc(&layer2, 1, 2, ACTIV_SIGMOID)
-		|| !NetLayerAlloc(&layer3, 3, 2, ACTIV_TANH))
+		   !NetLayerAlloc(&layer1, (NetLayerParams){1, ACTIV_LINEAR}, 1)
+		|| !NetLayerAlloc(&layer2, (NetLayerParams){1, ACTIV_SIGMOID}, 2)
+		|| !NetLayerAlloc(&layer3, (NetLayerParams){3, ACTIV_TANH}, 2))
 		goto cleanup;
 
 	bool flag1 = true;
@@ -204,8 +204,8 @@ bool UTNetLayerBackwardGD()
 {
 	NetLayer layer1, layer2;
 	if (
-		   !NetLayerAlloc(&layer1, 1, 1, ACTIV_LINEAR)
-		|| !NetLayerAlloc(&layer2, 2, 3, ACTIV_TANH))
+		   !NetLayerAlloc(&layer1, (NetLayerParams){1, ACTIV_LINEAR}, 1)
+		|| !NetLayerAlloc(&layer2, (NetLayerParams){2, ACTIV_TANH}, 3))
 		goto cleanup;
 
 	bool flag1 = true;
@@ -285,12 +285,12 @@ bool UTNetAllocFree()
 	bool flag = false;
 
 	Net net;
-	size_t lsizes[] = { 2, 3, 1 };
-	NetActiv activs[] = {
-		ACTIV_TANH,
-		ACTIV_SIGMOID
+	NetLayerParams lparams[] = {
+		{ 2, ACTIV_TANH },
+		{ 3, ACTIV_SIGMOID },
+		{ 1, ACTIV_NULL }
 	};
-	if (!NetAlloc(&net, 3, lsizes, activs))
+	if (!NetAlloc(&net, 3, lparams))
 		goto cleanup;
 
 	flag =
@@ -316,12 +316,12 @@ bool UTNetTrainXOR()
 	bool flag = false;
 
 	Net net;
-	size_t lsizes[] = { 2, 3, 1 };
-	NetActiv activs[] = {
-		ACTIV_TANH,
-		ACTIV_SIGMOID
+	NetLayerParams lparams[] = {
+		{ 2, ACTIV_TANH },
+		{ 3, ACTIV_SIGMOID },
+		{ 1, ACTIV_NULL }
 	};
-	if (!NetAlloc(&net, 3, lsizes, activs))
+	if (!NetAlloc(&net, 3, lparams))
 		goto cleanup;
 
 	NetShuffle(&net);

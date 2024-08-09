@@ -2,13 +2,13 @@
 #define RUNN_H
 
 #include <stddef.h>
-
+#include <stdbool.h>
 
 /* Neural Network */
 
-/*
- *  NN -> Net -> Activation Functions
- */
+// -------------------
+// NN->Net->Activation
+// -------------------
 
 typedef struct NetActiv
 {
@@ -39,16 +39,26 @@ float ActivReLU(float val);
 float ActivReLUDeriv(float val);
 #define ACTIV_RELU (NetActiv){ActivReLU,ActivReLUDeriv}
 
-/*
- *  NN -> Net -> Loss Functions
- */
+// -------------
+// NN->Net->Loss
+// -------------
 
 float LossMSE(size_t size, float act[], float exp[]);
 void LossMSEDeriv(size_t size, float act[], float exp[], float out[]);
 
-/*
- *  NN -> Net -> Layer
- */
+// -----------------------------
+// NN->Net->Layer->Params (Init)
+// -----------------------------
+
+typedef struct NetLayerParams
+{
+	size_t size;
+	NetActiv activ;
+} NetLayerParams;
+
+// --------------
+// NN->Net->Layer
+// --------------
 
 typedef struct NetLayer
 {
@@ -62,7 +72,7 @@ typedef struct NetLayer
 } NetLayer;
 
 // WARNING: Do not alloc twice
-bool NetLayerAlloc(NetLayer *layer, size_t size, size_t nextSize, NetActiv activ);
+bool NetLayerAlloc(NetLayer *layer, NetLayerParams params, size_t nextSize);
 
 void NetLayerFree(NetLayer *layer);
 
@@ -72,9 +82,9 @@ bool NetLayerForward(NetLayer *layer, float in[], float out[]);
 // Can NOT be in == out
 bool NetLayerBackwardGD(NetLayer *layer, float gradOut[], float gradIn[], float lrate);
 
-/*
- *  NN -> NET
- */
+// -------
+// NN->Net
+// -------
 
 typedef struct Net
 {
@@ -85,8 +95,7 @@ typedef struct Net
 bool NetAlloc(
 	Net *net,
 	size_t lcount,
-	size_t lsizes[],
-	NetActiv activs[]);
+	NetLayerParams lparams[]);
 
 void NetFree(Net *net);
 
