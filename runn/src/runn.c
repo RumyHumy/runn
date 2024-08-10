@@ -1,4 +1,5 @@
 // Rami's Usable Neural Network
+// Version: 0.0.0.1
 
 #include <stddef.h>
 #include <stdbool.h>
@@ -252,12 +253,14 @@ void NNShuffle(NeuralNetwork *nn)
 			nn->layers[l].weights,
 			1.0,
 			0.0,
-			nn->layers[l].nsize*nn->layers[l].size);
+			nn->layers[l].nsize * nn->layers[l].size
+		);
 
 		ArrayRandomize(
 			nn->layers[l].biases,
 			1.0,
 			0.0,
-			nn->layers[l].nsize);
+			nn->layers[l].nsize
+		);
 	}
 }
