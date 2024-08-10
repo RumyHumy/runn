@@ -8,18 +8,18 @@ int main()
 {
 	srand(time(NULL));
 
-	Net net;
+	NeuralNetwork nn;
 
-	NetLayerParams layers[] = {
-		{ .size=2, .activ=ACTIV_TANH },
-		{ .size=3, .activ=ACTIV_SIGMOID },
-		{ .size=1, .activ=ACTIV_NULL }
+	NNLayerParams layers[] = {
+		{ .size=2, .activ=ACTIVATION_TANH },
+		{ .size=3, .activ=ACTIVATION_SIGMOID },
+		{ .size=1, .activ=ACTIVATION_NULL }
 	};
 
-	if (!NetAlloc(&net, 3, layers))
+	if (!NNAlloc(&nn, 3, layers))
 		return 1;
 
-	NetShuffle(&net);
+	NNShuffle(&nn);
 
 	float eIn[4][2]  = { { 0, 0 }, { 0, 1 }, { 1, 0 }, { 1, 1 } };
 	float eOut[4][1] = { { 0    }, { 1    }, { 1    }, { 0    } };
@@ -31,12 +31,12 @@ int main()
 	for (int i = 0; i < 100000; i++)
 	{
 		int j = i%4;
-		NetForward(&net, eIn[j], out);
+		NNForward(&nn, eIn[j], out);
 		LossMSEDeriv(3, out, eOut[j], gradOut);
 
-		for (int l = net.lcount-2; l >= 0; l--)
+		for (int l = nn.lcount-2; l >= 0; l--)
 		{
-			NetLayerBackwardGD(&net.layers[l], gradOut, gradIn, 0.7);
+			NNLayerBackwardGD(&nn.layers[l], gradOut, gradIn, 0.7);
 			for (int k = 0; k < 3; k++)
 				gradOut[k] = gradIn[k];
 		}
@@ -44,7 +44,7 @@ int main()
 
 	for (int i = 0; i < 4; i++)
 	{
-		NetForward(&net, eIn[i], out);
+		NNForward(&nn, eIn[i], out);
 		printf("%.0f xor %.0f = %f ~ %.0f\n", eIn[i][0], eIn[i][1], out[0], eOut[i][0]);
 	}
 

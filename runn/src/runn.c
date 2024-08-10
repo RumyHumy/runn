@@ -10,59 +10,59 @@
 
 /* Neural Network */
 
-// -------------------
-// NN->Net->Activation
-// -------------------
+// ------------------------
+// NN->Activation Functions
+// ------------------------
 
 // Linear
-float ActivLinear(float val)
+float ActivationLinear(float val)
 {
 	return val;
 }
 
-float ActivLinearDeriv(float val)
+float ActivationLinearDeriv(float val)
 {
 	return 1.0;
 }
 
 // Sigmoid
-float ActivSigmoid(float val)
+float ActivationSigmoid(float val)
 {
 	return 1.0 / (1.0 + exp(-val));
 }
 
-float ActivSigmoidDeriv(float val)
+float ActivationSigmoidDeriv(float val)
 {
-	float sigmoid = ActivSigmoid(val);
+	float sigmoid = ActivationSigmoid(val);
 	return sigmoid * (1.0 - sigmoid);
 }
 
 // Tanh
-float ActivTanh(float val)
+float ActivationTanh(float val)
 {
 	return tanh(val);
 }
 
-float ActivTanhDeriv(float val)
+float ActivationTanhDeriv(float val)
 {
 	double _tanh = tanh(val);
 	return 1.0 - _tanh * _tanh;
 }
 
 // ReLU
-float ActivReLU(float val)
+float ActivationReLU(float val)
 {
 	return (val >= 0.0 ? val : 0.0);
 }
 
-float ActivReLUDeriv(float val)
+float ActivationReLUDeriv(float val)
 {
 	return (val >= 0.0 ? 1.0 : 0.0);
 }
 
-// -------------
-// NN->Net->Loss
-// -------------
+// ------------------
+// NN->Loss Functions
+// ------------------
 
 float LossMSE(size_t size, float act[], float exp[])
 {
@@ -78,25 +78,25 @@ void LossMSEDeriv(size_t size, float act[], float exp[], float out[])
 		out[i] = 2.0*(act[i]-exp[i])/size;
 }
 
-// --------------
-// NN->Net->Layer
-// --------------
+// ---------
+// NN->Layer
+// ---------
 
-bool NetLayerAlloc(NetLayer *layer, NetLayerParams params, size_t nextSize)
+bool NNLayerAlloc(NNLayer *layer, NNLayerParams params, size_t nsize)
 {
-	*layer = (NetLayer){
-		.size     = params.size,
-		.nextSize = nextSize,
-		.weights  = NULL,
-		.biases   = NULL,
-		.denseIn  = calloc(params.size, sizeof(*layer->denseIn)),
-		.activIn  = calloc(nextSize,    sizeof(*layer->activIn)),
-		.activ    = params.activ };
+	*layer = (NNLayer){
+		.size    = params.size,
+		.nsize   = nsize,
+		.weights = NULL,
+		.biases  = NULL,
+		.denseIn = calloc(params.size, sizeof(*layer->denseIn)),
+		.activIn = calloc(nsize, sizeof(*layer->activIn)),
+		.activ   = params.activ };
 
-	if (nextSize != 0)
+	if (nsize != 0)
 	{
-		layer->weights = calloc(nextSize*params.size, sizeof(*layer->weights));
-		layer->biases  = calloc(nextSize,             sizeof(*layer->biases));
+		layer->weights = calloc(nsize*params.size, sizeof(*layer->weights));
+		layer->biases  = calloc(nsize,             sizeof(*layer->biases));
 		
 		return
 			   layer->weights
@@ -108,7 +108,7 @@ bool NetLayerAlloc(NetLayer *layer, NetLayerParams params, size_t nextSize)
 	return true;
 }
 
-void NetLayerFree(NetLayer *layer)
+void NNLayerFree(NNLayer *layer)
 {
 	free(layer->weights);
 	free(layer->biases);
@@ -117,14 +117,14 @@ void NetLayerFree(NetLayer *layer)
 }
 
 // Allows to in == out
-bool NetLayerForward(NetLayer *layer, float *in, float *out)
+bool NNLayerForward(NNLayer *layer, float *in, float *out)
 {
 	// Setting dense layer X
 	for (int r = 0; r < layer->size; r++)
 		layer->denseIn[r] = in[r];
 
 	// Y = func(W dot X + B)
-	for (int r = 0; r < layer->nextSize; r++)
+	for (int r = 0; r < layer->nsize; r++)
 	{
 		// Setting activ layer X
 		layer->activIn[r] = layer->biases[r];
@@ -136,13 +136,13 @@ bool NetLayerForward(NetLayer *layer, float *in, float *out)
 }
 
 // Does NOT allows to in == out
-bool NetLayerBackwardGD(NetLayer *layer, float gradOut[], float gradIn[], float lrate)
+bool NNLayerBackwardGD(NNLayer *layer, float gradOut[], float gradIn[], float lrate)
 {	
 	// Activation layer
 	// Xa - activ layer in 
 	// dE/dXa = dE/dY * f'(Xa)
-	float *gradDenseOut = calloc(layer->nextSize, sizeof(*gradDenseOut));
-	for (size_t i = 0; i < layer->nextSize; i++)
+	float *gradDenseOut = calloc(layer->nsize, sizeof(*gradDenseOut));
+	for (size_t i = 0; i < layer->nsize; i++)
 		gradDenseOut[i] = gradOut[i] * layer->activ.deriv(layer->activIn[i]);
 
 	// Dense layer
@@ -150,7 +150,7 @@ bool NetLayerBackwardGD(NetLayer *layer, float gradOut[], float gradIn[], float 
 	// dE/dW = dE/dY * X^T 
 	// W = W' - lrate * dE/dW
 	// B = B' - lrate * dE/dW
-	for (int i = 0; i < layer->nextSize; i++)
+	for (int i = 0; i < layer->nsize; i++)
 	{
 		for (int j = 0; j < layer->size; j++)
 			layer->weights[i*layer->size+j]
@@ -162,40 +162,40 @@ bool NetLayerBackwardGD(NetLayer *layer, float gradOut[], float gradIn[], float 
 	for (int i = 0; i < layer->size; i++)
 	{
 		gradIn[i] = 0.0;
-		for (int j = 0; j < layer->nextSize; j++)
-			gradIn[i] += layer->weights[j*layer->nextSize+i] * gradDenseOut[j];
+		for (int j = 0; j < layer->nsize; j++)
+			gradIn[i] += layer->weights[j*layer->nsize+i] * gradDenseOut[j];
 	}
 	free(gradDenseOut);
 }
 
-// -------
-// NN->Net
-// -------
+// -------------
+// NeuralNetwork
+// -------------
 
-bool NetAlloc(
-	Net *net,
+bool NNAlloc(
+	NeuralNetwork *nn,
 	size_t lcount,
-	NetLayerParams lparams[])
+	NNLayerParams lparams[])
 {
-	*net = (Net){
+	*nn = (NeuralNetwork){
 		.lcount = lcount,
-		.layers = malloc(lcount*sizeof(*net->layers))
+		.layers = malloc(lcount*sizeof(*nn->layers))
 	};
 
-	if (!net->layers)
+	if (!nn->layers)
 		return false;
 
-	for (size_t i = 0; i < net->lcount; i++)
+	for (size_t i = 0; i < nn->lcount; i++)
 	{
-		if (!NetLayerAlloc(
-			net->layers+i,
+		if (!NNLayerAlloc(
+			nn->layers+i,
 			lparams[i],
-			(i != net->lcount-1 ? lparams[i+1].size : 0)))
+			(i != nn->lcount-1 ? lparams[i+1].size : 0)))
 		{
 			for (int j = 0; j < i; j++)
-				NetLayerFree(net->layers+i);
+				NNLayerFree(nn->layers+i);
 
-			free(net->layers);
+			free(nn->layers);
 
 			return false;
 		}
@@ -204,35 +204,35 @@ bool NetAlloc(
 	return true;
 }
 
-void NetFree(Net *net)
+void NNFree(NeuralNetwork *nn)
 {
-	if (net->layers == NULL)
+	if (nn->layers == NULL)
 		return;
 
-	for (size_t i = 0; i < net->lcount; i++)
-		NetLayerFree(net->layers+i);
+	for (size_t i = 0; i < nn->lcount; i++)
+		NNLayerFree(nn->layers+i);
 
-	free(net->layers);
+	free(nn->layers);
 }
 
-void NetForward(Net *net, float in[], float out[])
+void NNForward(NeuralNetwork *nn, float in[], float out[])
 {
 	size_t maxLayerSize = 0;
-	for (size_t l = 0; l < net->lcount; l++)
-		if (net->layers[l].size > maxLayerSize)
-			maxLayerSize = net->layers[l].size;
+	for (size_t l = 0; l < nn->lcount; l++)
+		if (nn->layers[l].size > maxLayerSize)
+			maxLayerSize = nn->layers[l].size;
 
 	// Create the overshoot matrix
 	float *buffer = malloc(maxLayerSize*sizeof(*buffer));
 
-	for (size_t i = 0; i < net->layers[0].size; i++)
+	for (size_t i = 0; i < nn->layers[0].size; i++)
 		buffer[i] = in[i];
 
 	// Feed forward
-	for (size_t l = 0; l < net->lcount-1; l++)
-		NetLayerForward(&net->layers[l], buffer, buffer);
+	for (size_t l = 0; l < nn->lcount-1; l++)
+		NNLayerForward(&nn->layers[l], buffer, buffer);
 
-	for (size_t i = 0; i < net->layers[net->lcount-1].size; i++)
+	for (size_t i = 0; i < nn->layers[nn->lcount-1].size; i++)
 		out[i] = buffer[i];
 	
 	free(buffer);
@@ -244,20 +244,20 @@ void ArrayRandomize(float *arr, float from, float to, size_t size)
 		arr[i] = from+(float)rand()/RAND_MAX*(from-to);
 }
 
-void NetShuffle(Net *net)
+void NNShuffle(NeuralNetwork *nn)
 {	
-	for (size_t l = 0; l < net->lcount-1; l++)
+	for (size_t l = 0; l < nn->lcount-1; l++)
 	{
 		ArrayRandomize(
-			net->layers[l].weights,
+			nn->layers[l].weights,
 			1.0,
 			0.0,
-			net->layers[l].nextSize*net->layers[l].size);
+			nn->layers[l].nsize*nn->layers[l].size);
 
 		ArrayRandomize(
-			net->layers[l].biases,
+			nn->layers[l].biases,
 			1.0,
 			0.0,
-			net->layers[l].nextSize);
+			nn->layers[l].nsize);
 	}
 }

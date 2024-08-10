@@ -6,101 +6,101 @@
 
 /* Neural Network */
 
-// -------------------
-// NN->Net->Activation
-// -------------------
+// ------------------------
+// NN->Activation Functions
+// ------------------------
 
-typedef struct NetActiv
+typedef struct NNActivation
 {
 	float (*func)(float);
 	float (*deriv)(float);
-} NetActiv;
+} NNActivation;
 
 // NULL
-#define ACTIV_NULL (NetActiv){NULL,NULL}
+#define ACTIVATION_NULL (NNActivation){NULL,NULL}
 
 // Linear
-float ActivLinear(float val);
-float ActivLinearDeriv(float val);
-#define ACTIV_LINEAR (NetActiv){ActivLinear,ActivLinearDeriv}
+float ActivationLinear(float val);
+float ActivationLinearDeriv(float val);
+#define ACTIVATION_LINEAR (NNActivation){ActivationLinear,ActivationLinearDeriv}
 
 // Sigmoid
-float ActivSigmoid(float val);
-float ActivSigmoidDeriv(float val);
-#define ACTIV_SIGMOID (NetActiv){ActivSigmoid,ActivSigmoidDeriv}
+float ActivationSigmoid(float val);
+float ActivationSigmoidDeriv(float val);
+#define ACTIVATION_SIGMOID (NNActivation){ActivationSigmoid,ActivationSigmoidDeriv}
 
 // Tanh 
-float ActivTanh(float val);
-float ActivTanhDeriv(float val);
-#define ACTIV_TANH (NetActiv){ActivTanh,ActivTanhDeriv}
+float ActivationTanh(float val);
+float ActivationTanhDeriv(float val);
+#define ACTIVATION_TANH (NNActivation){ActivationTanh,ActivationTanhDeriv}
 
 // ReLU 
-float ActivReLU(float val);
-float ActivReLUDeriv(float val);
-#define ACTIV_RELU (NetActiv){ActivReLU,ActivReLUDeriv}
+float ActivationReLU(float val);
+float ActivationReLUDeriv(float val);
+#define ACTIVATION_RELU (NNActivation){ActivationReLU,ActivationReLUDeriv}
 
-// -------------
-// NN->Net->Loss
-// -------------
+// ------------------
+// NN->Loss Functions
+// ------------------
 
 float LossMSE(size_t size, float act[], float exp[]);
 void LossMSEDeriv(size_t size, float act[], float exp[], float out[]);
 
-// -----------------------------
-// NN->Net->Layer->Params (Init)
-// -----------------------------
+// ------------------------------------
+// NN->Layer->Initialization Parameters
+// ------------------------------------
 
-typedef struct NetLayerParams
+typedef struct NNLayerParams
 {
 	size_t size;
-	NetActiv activ;
-} NetLayerParams;
+	NNActivation activ;
+} NNLayerParams;
 
-// --------------
-// NN->Net->Layer
-// --------------
+// ---------
+// NN->Layer
+// ---------
 
-typedef struct NetLayer
+typedef struct NNLayer
 {
 	size_t size;
-	size_t nextSize;
-	float *weights;    // next x size
-	float *biases;     // next x 1
-	float *denseIn;    // size x 1
-	float *activIn;    // next x 1
-	NetActiv activ;
-} NetLayer;
+	size_t nsize;
+	float *weights; // next x size
+	float *biases;  // next x 1
+	float *denseIn; // size x 1
+	float *activIn; // next x 1
+	NNActivation activ;
+} NNLayer;
 
 // WARNING: Do not alloc twice
-bool NetLayerAlloc(NetLayer *layer, NetLayerParams params, size_t nextSize);
+bool NNLayerAlloc(NNLayer *layer, NNLayerParams params, size_t nsize);
 
-void NetLayerFree(NetLayer *layer);
+void NNLayerFree(NNLayer *layer);
 
 // Can be in == out
-bool NetLayerForward(NetLayer *layer, float in[], float out[]);
+bool NNLayerForward(NNLayer *layer, float in[], float out[]);
 
 // Can NOT be in == out
-bool NetLayerBackwardGD(NetLayer *layer, float gradOut[], float gradIn[], float lrate);
+bool NNLayerBackwardGD(NNLayer *layer, float gradOut[], float gradIn[], float lrate);
 
-// -------
-// NN->Net
-// -------
+// --------------
+// Neural Network
+// --------------
 
-typedef struct Net
+typedef struct NeuralNetwork
 {
 	size_t    lcount;
-	NetLayer *layers;
-} Net;
+	NNLayer *layers;
+} NeuralNetwork;
 
-bool NetAlloc(
-	Net *net,
+bool NNAlloc(
+	NeuralNetwork *nn,
 	size_t lcount,
-	NetLayerParams lparams[]);
+	NNLayerParams lparams[]);
 
-void NetFree(Net *net);
+void NNFree(NeuralNetwork *nn);
 
-void NetForward(Net *net, float in[], float out[]);
+void NNForward(NeuralNetwork *nn, float in[], float out[]);
 
-void NetShuffle(Net *net);
+void NNShuffle(NeuralNetwork *nn);
 
 #endif /* RUNN_H */
