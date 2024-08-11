@@ -63,7 +63,6 @@ typedef struct NNLayerParams
 typedef struct NNLayer
 {
 	size_t size;
-	size_t nsize;
 	float *weights; // next x size
 	float *biases;  // next x 1
 	float *denseIn; // size x 1
@@ -76,19 +75,13 @@ bool NNLayerAlloc(NNLayer *layer, NNLayerParams params, size_t nsize);
 
 void NNLayerFree(NNLayer *layer);
 
-// Can be in == out
-bool NNLayerForward(NNLayer *layer, float in[], float out[]);
-
-// Can NOT be in == out
-bool NNLayerBackwardGD(NNLayer *layer, float gradOut[], float gradIn[], float lrate);
-
-// --------------
-// Neural Network
-// --------------
+// ----------------------
+// Neural Network (Logic)
+// ----------------------
 
 typedef struct NeuralNetwork
 {
-	size_t    lcount;
+	size_t   lcount;
 	NNLayer *layers;
 } NeuralNetwork;
 
@@ -96,6 +89,13 @@ bool NNAlloc(
 	NeuralNetwork *nn,
 	size_t lcount,
 	NNLayerParams lparams[]);
+
+// Can be in == out
+bool NNLayerForward(NeuralNetwork *nn, size_t lindex, float *in, float *out);
+
+// Can NOT be in == out
+bool NNLayerBackwardGD(
+	NeuralNetwork *nn, size_t lindex, float gradOut[], float gradIn[], float lrate);
 
 void NNFree(NeuralNetwork *nn);
 

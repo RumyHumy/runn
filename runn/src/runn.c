@@ -87,7 +87,6 @@ bool NNLayerAlloc(NNLayer *layer, NNLayerParams params, size_t nsize)
 {
 	*layer = (NNLayer){
 		.size    = params.size,
-		.nsize   = nsize,
 		.weights = NULL,
 		.biases  = NULL,
 		.denseIn = calloc(params.size, sizeof(*layer->denseIn)),
@@ -117,33 +116,45 @@ void NNLayerFree(NNLayer *layer)
 	free(layer->activIn);
 }
 
+
+// ---------------------
+// NeuralNetwork (logic)
+// ---------------------
+
 // Allows to in == out
-bool NNLayerForward(NNLayer *layer, float *in, float *out)
+bool NNLayerForward(NeuralNetwork *nn, size_t lindex, float *in, float *out)
 {
+	NNLayer *layer = &nn->layers[lindex];
+	size_t size = nn->layers[lindex].size;
+	size_t nsize = nn->layers[lindex+1].size;
 	// Setting dense layer X
-	for (int r = 0; r < layer->size; r++)
+	for (int r = 0; r < size; r++)
 		layer->denseIn[r] = in[r];
 
 	// Y = func(W dot X + B)
-	for (int r = 0; r < layer->nsize; r++)
+	for (int r = 0; r < nsize; r++)
 	{
 		// Setting activ layer X
 		layer->activIn[r] = layer->biases[r];
-		for (int c = 0; c < layer->size; c++)
-			layer->activIn[r] += layer->weights[r*layer->size+c] * layer->denseIn[c];
+		for (int c = 0; c < size; c++)
+			layer->activIn[r] += layer->weights[r*size+c] * layer->denseIn[c];
 		// Setting out
 		out[r] = layer->activ.func(layer->activIn[r]);
 	}
 }
 
 // Does NOT allows to in == out
-bool NNLayerBackwardGD(NNLayer *layer, float gradOut[], float gradIn[], float lrate)
+bool NNLayerBackwardGD(
+	NeuralNetwork *nn, size_t lindex, float gradOut[], float gradIn[], float lrate)
 {	
+	NNLayer *layer = &nn->layers[lindex];
+	size_t size = nn->layers[lindex].size;
+	size_t nsize = nn->layers[lindex+1].size;
 	// Activation layer
 	// Xa - activ layer in 
 	// dE/dXa = dE/dY * f'(Xa)
-	float *gradDenseOut = calloc(layer->nsize, sizeof(*gradDenseOut));
-	for (size_t i = 0; i < layer->nsize; i++)
+	float *gradDenseOut = calloc(nsize, sizeof(*gradDenseOut));
+	for (size_t i = 0; i < nsize; i++)
 		gradDenseOut[i] = gradOut[i] * layer->activ.deriv(layer->activIn[i]);
 
 	// Dense layer
@@ -151,27 +162,22 @@ bool NNLayerBackwardGD(NNLayer *layer, float gradOut[], float gradIn[], float lr
 	// dE/dW = dE/dY * X^T 
 	// W = W' - lrate * dE/dW
 	// B = B' - lrate * dE/dW
-	for (int i = 0; i < layer->nsize; i++)
+	for (int i = 0; i < nsize; i++)
 	{
-		for (int j = 0; j < layer->size; j++)
-			layer->weights[i*layer->size+j]
-				-= lrate * gradDenseOut[i] * layer->denseIn[j];
+		for (int j = 0; j < size; j++)
+			layer->weights[i*size+j] -= lrate * gradDenseOut[i] * layer->denseIn[j];
 		layer->biases[i] -= lrate * gradDenseOut[i];
 	}
 
 	// Return gradIn
-	for (int i = 0; i < layer->size; i++)
+	for (int i = 0; i < size; i++)
 	{
 		gradIn[i] = 0.0;
-		for (int j = 0; j < layer->nsize; j++)
-			gradIn[i] += layer->weights[j*layer->nsize+i] * gradDenseOut[j];
+		for (int j = 0; j < nsize; j++)
+			gradIn[i] += layer->weights[j*nsize+i] * gradDenseOut[j];
 	}
 	free(gradDenseOut);
 }
-
-// -------------
-// NeuralNetwork
-// -------------
 
 bool NNAlloc(
 	NeuralNetwork *nn,
@@ -231,7 +237,7 @@ void NNForward(NeuralNetwork *nn, float in[], float out[])
 
 	// Feed forward
 	for (size_t l = 0; l < nn->lcount-1; l++)
-		NNLayerForward(&nn->layers[l], buffer, buffer);
+		NNLayerForward(nn, l, buffer, buffer);
 
 	for (size_t i = 0; i < nn->layers[nn->lcount-1].size; i++)
 		out[i] = buffer[i];
@@ -253,14 +259,14 @@ void NNShuffle(NeuralNetwork *nn)
 			nn->layers[l].weights,
 			1.0,
 			0.0,
-			nn->layers[l].nsize * nn->layers[l].size
+			nn->layers[l+1].size * nn->layers[l].size
 		);
 
 		ArrayRandomize(
 			nn->layers[l].biases,
 			1.0,
 			0.0,
-			nn->layers[l].nsize
+			nn->layers[l+1].size
 		);
 	}
 }

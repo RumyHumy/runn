@@ -36,7 +36,7 @@ int main()
 
 		for (int l = nn.lcount-2; l >= 0; l--)
 		{
-			NNLayerBackwardGD(&nn.layers[l], gradOut, gradIn, 0.7);
+			NNLayerBackwardGD(&nn, l, gradOut, gradIn, 0.7);
 			for (int k = 0; k < 3; k++)
 				gradOut[k] = gradIn[k];
 		}
