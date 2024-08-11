@@ -53,7 +53,7 @@ void LossMSEDeriv(size_t size, float act[], float exp[], float out[]);
 typedef struct NNLayerParams
 {
 	size_t size;
-	NNActivation activ;
+	NNActivation activation;
 } NNLayerParams;
 
 // ---------
@@ -67,7 +67,7 @@ typedef struct NNLayer
 	float *biases;  // next x 1
 	float *denseIn; // size x 1
 	float *activIn; // next x 1
-	NNActivation activ;
+	NNActivation activation;
 } NNLayer;
 
 // WARNING: Do not alloc twice

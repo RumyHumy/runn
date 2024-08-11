@@ -11,9 +11,9 @@ int main()
 	NeuralNetwork nn;
 
 	NNLayerParams layers[] = {
-		{ .size=2, .activ=ACTIVATION_TANH },
-		{ .size=3, .activ=ACTIVATION_SIGMOID },
-		{ .size=1, .activ=ACTIVATION_NULL }
+		{ .size=2, .activation=ACTIVATION_TANH },
+		{ .size=3, .activation=ACTIVATION_SIGMOID },
+		{ .size=1, .activation=ACTIVATION_NULL }
 	};
 
 	if (!NNAlloc(&nn, 3, layers))

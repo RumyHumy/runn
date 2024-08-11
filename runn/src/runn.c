@@ -86,12 +86,12 @@ void LossMSEDeriv(size_t size, float act[], float exp[], float out[])
 bool NNLayerAlloc(NNLayer *layer, NNLayerParams params, size_t nsize)
 {
 	*layer = (NNLayer){
-		.size    = params.size,
-		.weights = NULL,
-		.biases  = NULL,
-		.denseIn = calloc(params.size, sizeof(*layer->denseIn)),
-		.activIn = calloc(nsize, sizeof(*layer->activIn)),
-		.activ   = params.activ };
+		.size       = params.size,
+		.weights    = NULL,
+		.biases     = NULL,
+		.denseIn    = calloc(params.size, sizeof(*layer->denseIn)),
+		.activIn    = calloc(nsize, sizeof(*layer->activIn)),
+		.activation = params.activation };
 
 	if (nsize != 0)
 	{
@@ -139,7 +139,7 @@ bool NNLayerForward(NeuralNetwork *nn, size_t lindex, float *in, float *out)
 		for (int c = 0; c < size; c++)
 			layer->activIn[r] += layer->weights[r*size+c] * layer->denseIn[c];
 		// Setting out
-		out[r] = layer->activ.func(layer->activIn[r]);
+		out[r] = layer->activation.func(layer->activIn[r]);
 	}
 }
 
@@ -151,11 +151,11 @@ bool NNLayerBackwardGD(
 	size_t size = nn->layers[lindex].size;
 	size_t nsize = nn->layers[lindex+1].size;
 	// Activation layer
-	// Xa - activ layer in 
+	// Xa - activation layer in 
 	// dE/dXa = dE/dY * f'(Xa)
 	float *gradDenseOut = calloc(nsize, sizeof(*gradDenseOut));
 	for (size_t i = 0; i < nsize; i++)
-		gradDenseOut[i] = gradOut[i] * layer->activ.deriv(layer->activIn[i]);
+		gradDenseOut[i] = gradOut[i] * layer->activation.deriv(layer->activIn[i]);
 
 	// Dense layer
 	// X - dense layer in 
