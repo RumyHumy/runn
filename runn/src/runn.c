@@ -122,7 +122,7 @@ void NNLayerFree(NNLayer *layer)
 // ---------------------
 
 // Allows to in == out
-bool NNLayerForward(NeuralNetwork *nn, size_t lindex, float *in, float *out)
+void NNLayerForward(NeuralNetwork *nn, size_t lindex, float *in, float *out)
 {
 	NNLayer *layer = &nn->layers[lindex];
 	size_t size = nn->layers[lindex].size;
@@ -144,7 +144,7 @@ bool NNLayerForward(NeuralNetwork *nn, size_t lindex, float *in, float *out)
 }
 
 // Does NOT allows to in == out
-bool NNLayerBackwardGD(
+void NNLayerBackwardGD(
 	NeuralNetwork *nn, size_t lindex, float gradOut[], float gradIn[], float lrate)
 {	
 	NNLayer *layer = &nn->layers[lindex];
@@ -251,21 +251,21 @@ void ArrayRandomize(float *arr, float from, float to, size_t size)
 		arr[i] = from+(float)rand()/RAND_MAX*(to-from);
 }
 
-void NNShuffle(NeuralNetwork *nn)
+void NNShuffle(NeuralNetwork *nn, float wfrom, float wto, float bfrom, float bto)
 {	
 	for (size_t l = 0; l < nn->lcount-1; l++)
 	{
 		ArrayRandomize(
 			nn->layers[l].weights,
-			-1.0,
-			+1.0,
+			wfrom,
+			wto,
 			nn->layers[l+1].size * nn->layers[l].size
 		);
 
 		ArrayRandomize(
 			nn->layers[l].biases,
-			-1.0,
-			+1.0,
+			bfrom,
+			bto,
 			nn->layers[l+1].size
 		);
 	}

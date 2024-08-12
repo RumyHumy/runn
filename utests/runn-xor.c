@@ -1,12 +1,18 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <time.h>
+#include <math.h>
 
 #include "runn.h"
 
-int main()
+bool UTRunnXor()
 {
-	srand(time(NULL));
+	printf("[XOR] Testing...\n");
+
+	bool flag = false;
+
+	srand(1911);
 
 	NeuralNetwork nn;
 
@@ -19,7 +25,7 @@ int main()
 	if (!NNAlloc(&nn, 3, layers))
 		return 1;
 
-	NNShuffle(&nn);
+	NNShuffle(&nn, -1.0, 1.0, -1.0, 1.0);
 
 	float eIn[4][2]  = { { 0, 0 }, { 0, 1 }, { 1, 0 }, { 1, 1 } };
 	float eOut[4][1] = { { 0    }, { 1    }, { 1    }, { 0    } };
@@ -42,11 +48,17 @@ int main()
 		}
 	}
 
+	flag = true;
 	for (int i = 0; i < 4; i++)
 	{
 		NNForward(&nn, eIn[i], out);
-		printf("%.0f xor %.0f = %f ~ %.0f\n", eIn[i][0], eIn[i][1], out[0], eOut[i][0]);
+		printf("  %.0f xor %.0f = %f ~ %.0f\n", eIn[i][0], eIn[i][1], out[0], eOut[i][0]);
+		flag &= roundf(out[0])==eOut[i][0];
 	}
 
-	return 0;
+	printf("[XOR] -> %s\n\n", (flag ? "YAS<3" : "NAH:("));
+
+	NNFree(&nn);
+
+	return flag;
 }

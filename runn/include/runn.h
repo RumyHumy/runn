@@ -91,16 +91,16 @@ bool NNAlloc(
 	NNLayerParams lparams[]);
 
 // Can be in == out
-bool NNLayerForward(NeuralNetwork *nn, size_t lindex, float *in, float *out);
+void NNLayerForward(NeuralNetwork *nn, size_t lindex, float *in, float *out);
 
 // Can NOT be in == out
-bool NNLayerBackwardGD(
+void NNLayerBackwardGD(
 	NeuralNetwork *nn, size_t lindex, float gradOut[], float gradIn[], float lrate);
 
 void NNFree(NeuralNetwork *nn);
 
 void NNForward(NeuralNetwork *nn, float in[], float out[]);
 
-void NNShuffle(NeuralNetwork *nn);
+void NNShuffle(NeuralNetwork *nn, float wfrom, float wto, float bfrom, float bto);
 
 #endif /* RUNN_H */
