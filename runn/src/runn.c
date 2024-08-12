@@ -248,7 +248,7 @@ void NNForward(NeuralNetwork *nn, float in[], float out[])
 void ArrayRandomize(float *arr, float from, float to, size_t size)
 {
 	for (size_t i = 0; i < size; i++)
-		arr[i] = from+(float)rand()/RAND_MAX*(from-to);
+		arr[i] = from+(float)rand()/RAND_MAX*(to-from);
 }
 
 void NNShuffle(NeuralNetwork *nn)
@@ -257,15 +257,15 @@ void NNShuffle(NeuralNetwork *nn)
 	{
 		ArrayRandomize(
 			nn->layers[l].weights,
-			1.0,
-			0.0,
+			-1.0,
+			+1.0,
 			nn->layers[l+1].size * nn->layers[l].size
 		);
 
 		ArrayRandomize(
 			nn->layers[l].biases,
-			1.0,
-			0.0,
+			-1.0,
+			+1.0,
 			nn->layers[l+1].size
 		);
 	}
