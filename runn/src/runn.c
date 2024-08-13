@@ -9,6 +9,8 @@
 
 #include "runn.h"
 
+// TODO: Add: float *buffer[2]; to NN
+
 /* Neural Network */
 
 // ------------------------
@@ -243,6 +245,30 @@ void NNForward(NeuralNetwork *nn, float in[], float out[])
 		out[i] = buffer[i];
 	
 	free(buffer);
+}
+
+void NNBackwardGD(
+		NeuralNetwork *nn,
+		float in[],
+		float out[],
+		float eIn[],
+		float eOut[],
+		float lrate)
+{
+	//size_t maxLayerSize = 0;
+	//for (size_t l = 0; l < nn->lcount; l++)
+	//	if (nn->layers[l].size > maxLayerSize)
+	//		maxLayerSize = nn->layers[l].size;
+
+	//NNForward(&nn, eIn[j], out);
+	//LossMSEDeriv(3, out, eOut[j], gradOut);
+
+	//for (int l = nn.lcount-2; l >= 0; l--)
+	//{
+	//	NNLayerBackwardGD(&nn, l, gradOut, gradIn, lrate);
+	//	for (int k = 0; k < 3; k++)
+	//		gradOut[k] = gradIn[k];
+	//}
 }
 
 void ArrayRandomize(float *arr, float from, float to, size_t size)
