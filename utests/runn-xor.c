@@ -25,7 +25,7 @@ bool UTRunnXor()
 	if (!NNAlloc(&nn, 3, layers))
 		return 1;
 
-	NNShuffle(&nn, -1.0, 1.0, -1.0, 1.0);
+	NNShuffle(nn, -1.0, 1.0, -1.0, 1.0);
 
 	float eIn[4][2]  = { { 0, 0 }, { 0, 1 }, { 1, 0 }, { 1, 1 } };
 	float eOut[4][1] = { { 0    }, { 1    }, { 1    }, { 0    } };
@@ -37,12 +37,12 @@ bool UTRunnXor()
 	for (int i = 0; i < 100000; i++)
 	{
 		int j = i%4;
-		NNForward(&nn, eIn[j], out);
+		NNForward(nn, eIn[j], out);
 		LossMSEDeriv(3, out, eOut[j], gradOut);
 
 		for (int l = nn.lcount-2; l >= 0; l--)
 		{
-			NNLayerBackwardGD(&nn, l, gradOut, gradIn, 0.7);
+			NNLayerBackwardGD(nn, l, gradOut, gradIn, 0.7);
 			for (int k = 0; k < 3; k++)
 				gradOut[k] = gradIn[k];
 		}
@@ -51,7 +51,7 @@ bool UTRunnXor()
 	flag = true;
 	for (int i = 0; i < 4; i++)
 	{
-		NNForward(&nn, eIn[i], out);
+		NNForward(nn, eIn[i], out);
 		printf("  %.0f xor %.0f = %f ~ %.0f\n", eIn[i][0], eIn[i][1], out[0], eOut[i][0]);
 		flag &= roundf(out[0])==eOut[i][0];
 	}

@@ -2,8 +2,9 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-bool UTRunnXor();
 bool UTRunnAllocFree();
+bool UTRunnXor();
+bool UTRunnTrainFuncXor();
 
 int main()
 {
@@ -11,7 +12,8 @@ int main()
 
 	bool flag =
 		   UTRunnAllocFree()
-		&& UTRunnXor();
+		&& UTRunnXor()
+		&& UTRunnTrainFuncXor();
 
 	return !flag;
 }

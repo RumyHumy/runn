@@ -9,8 +9,6 @@
 
 #include "runn.h"
 
-// TODO: Add: float *buffer[2]; to NN
-
 /* Neural Network */
 
 // ------------------------
@@ -112,6 +110,9 @@ bool NNLayerAlloc(NNLayer *layer, NNLayerParams params, size_t nsize)
 
 void NNLayerFree(NNLayer *layer)
 {
+	if (!layer)
+		return;
+
 	free(layer->weights);
 	free(layer->biases);
 	free(layer->denseIn);
@@ -124,40 +125,40 @@ void NNLayerFree(NNLayer *layer)
 // ---------------------
 
 // Allows to in == out
-void NNLayerForward(NeuralNetwork *nn, size_t lindex, float *in, float *out)
+void NNLayerForward(NeuralNetwork nn, size_t lindex, float *in, float *out)
 {
-	NNLayer *layer = &nn->layers[lindex];
-	size_t size = nn->layers[lindex].size;
-	size_t nsize = nn->layers[lindex+1].size;
+	NNLayer layer = nn.layers[lindex];
+	size_t size = nn.layers[lindex].size;
+	size_t nsize = nn.layers[lindex+1].size;
 	// Setting dense layer X
 	for (int r = 0; r < size; r++)
-		layer->denseIn[r] = in[r];
+		layer.denseIn[r] = in[r];
 
 	// Y = func(W dot X + B)
 	for (int r = 0; r < nsize; r++)
 	{
 		// Setting activ layer X
-		layer->activIn[r] = layer->biases[r];
+		layer.activIn[r] = layer.biases[r];
 		for (int c = 0; c < size; c++)
-			layer->activIn[r] += layer->weights[r*size+c] * layer->denseIn[c];
+			layer.activIn[r] += layer.weights[r*size+c] * layer.denseIn[c];
 		// Setting out
-		out[r] = layer->activation.func(layer->activIn[r]);
+		out[r] = layer.activation.func(layer.activIn[r]);
 	}
 }
 
 // Does NOT allows to in == out
 void NNLayerBackwardGD(
-	NeuralNetwork *nn, size_t lindex, float gradOut[], float gradIn[], float lrate)
+	NeuralNetwork nn, size_t lindex, float gradOut[], float gradIn[], float lrate)
 {	
-	NNLayer *layer = &nn->layers[lindex];
-	size_t size = nn->layers[lindex].size;
-	size_t nsize = nn->layers[lindex+1].size;
+	NNLayer layer = nn.layers[lindex];
+	size_t size = nn.layers[lindex].size;
+	size_t nsize = nn.layers[lindex+1].size;
 	// Activation layer
 	// Xa - activation layer in 
 	// dE/dXa = dE/dY * f'(Xa)
 	float *gradDenseOut = calloc(nsize, sizeof(*gradDenseOut));
 	for (size_t i = 0; i < nsize; i++)
-		gradDenseOut[i] = gradOut[i] * layer->activation.deriv(layer->activIn[i]);
+		gradDenseOut[i] = gradOut[i] * layer.activation.deriv(layer.activIn[i]);
 
 	// Dense layer
 	// X - dense layer in 
@@ -167,8 +168,8 @@ void NNLayerBackwardGD(
 	for (int i = 0; i < nsize; i++)
 	{
 		for (int j = 0; j < size; j++)
-			layer->weights[i*size+j] -= lrate * gradDenseOut[i] * layer->denseIn[j];
-		layer->biases[i] -= lrate * gradDenseOut[i];
+			layer.weights[i*size+j] -= lrate * gradDenseOut[i] * layer.denseIn[j];
+		layer.biases[i] -= lrate * gradDenseOut[i];
 	}
 
 	// Return gradIn
@@ -176,8 +177,9 @@ void NNLayerBackwardGD(
 	{
 		gradIn[i] = 0.0;
 		for (int j = 0; j < nsize; j++)
-			gradIn[i] += layer->weights[j*nsize+i] * gradDenseOut[j];
+			gradIn[i] += layer.weights[j*nsize+i] * gradDenseOut[j];
 	}
+
 	free(gradDenseOut);
 }
 
@@ -194,8 +196,12 @@ bool NNAlloc(
 	if (!nn->layers)
 		return false;
 
+	size_t maxLayerSize = 0;
 	for (size_t i = 0; i < nn->lcount; i++)
 	{
+		if (maxLayerSize < lparams[i].size)
+			maxLayerSize = lparams[i].size;
+		
 		if (!NNLayerAlloc(
 			nn->layers+i,
 			lparams[i],
@@ -210,11 +216,20 @@ bool NNAlloc(
 		}
 	}
 
+	nn->buffer[0] = calloc(maxLayerSize, sizeof(**nn->buffer));
+	nn->buffer[1] = calloc(maxLayerSize, sizeof(**nn->buffer));
+
+	if (!nn->buffer[0] || !nn->buffer[1])
+		return false;
+
 	return true;
 }
 
 void NNFree(NeuralNetwork *nn)
 {
+	free(nn->buffer[0]);
+	free(nn->buffer[1]);
+
 	if (nn->layers == NULL)
 		return;
 
@@ -224,51 +239,33 @@ void NNFree(NeuralNetwork *nn)
 	free(nn->layers);
 }
 
-void NNForward(NeuralNetwork *nn, float in[], float out[])
+void NNForward(NeuralNetwork nn, float in[], float out[])
 {
-	size_t maxLayerSize = 0;
-	for (size_t l = 0; l < nn->lcount; l++)
-		if (nn->layers[l].size > maxLayerSize)
-			maxLayerSize = nn->layers[l].size;
-
-	// Create the overshoot matrix
-	float *buffer = malloc(maxLayerSize*sizeof(*buffer));
-
-	for (size_t i = 0; i < nn->layers[0].size; i++)
-		buffer[i] = in[i];
+	// Fill the start buffer
+	for (size_t i = 0; i < nn.layers[0].size; i++)
+		nn.buffer[0][i] = in[i];
 
 	// Feed forward
-	for (size_t l = 0; l < nn->lcount-1; l++)
-		NNLayerForward(nn, l, buffer, buffer);
+	for (size_t l = 0; l < nn.lcount-1; l++)
+		NNLayerForward(nn, l, nn.buffer[0], nn.buffer[0]);
 
-	for (size_t i = 0; i < nn->layers[nn->lcount-1].size; i++)
-		out[i] = buffer[i];
-	
-	free(buffer);
+	for (size_t i = 0; i < nn.layers[nn.lcount-1].size; i++)
+		out[i] = nn.buffer[0][i];
 }
 
 void NNBackwardGD(
-		NeuralNetwork *nn,
-		float in[],
-		float out[],
-		float eIn[],
-		float eOut[],
-		float lrate)
+	NeuralNetwork nn,
+	float out[],
+	float eIn[],
+	float eOut[],
+	float lrate)
 {
-	//size_t maxLayerSize = 0;
-	//for (size_t l = 0; l < nn->lcount; l++)
-	//	if (nn->layers[l].size > maxLayerSize)
-	//		maxLayerSize = nn->layers[l].size;
+	NNForward(nn, eIn, out);
 
-	//NNForward(&nn, eIn[j], out);
-	//LossMSEDeriv(3, out, eOut[j], gradOut);
+	LossMSEDeriv(nn.layers[nn.lcount-1].size, out, eOut, nn.buffer[nn.lcount%2]);
 
-	//for (int l = nn.lcount-2; l >= 0; l--)
-	//{
-	//	NNLayerBackwardGD(&nn, l, gradOut, gradIn, lrate);
-	//	for (int k = 0; k < 3; k++)
-	//		gradOut[k] = gradIn[k];
-	//}
+	for (size_t l = nn.lcount-2; l != 0; l--)
+		NNLayerBackwardGD(nn, l, nn.buffer[l%2], nn.buffer[(l+1)%2], lrate);
 }
 
 void ArrayRandomize(float *arr, float from, float to, size_t size)
@@ -277,22 +274,14 @@ void ArrayRandomize(float *arr, float from, float to, size_t size)
 		arr[i] = from+(float)rand()/RAND_MAX*(to-from);
 }
 
-void NNShuffle(NeuralNetwork *nn, float wfrom, float wto, float bfrom, float bto)
+void NNShuffle(NeuralNetwork nn, float wfrom, float wto, float bfrom, float bto)
 {	
-	for (size_t l = 0; l < nn->lcount-1; l++)
+	for (size_t l = 0; l < nn.lcount-1; l++)
 	{
-		ArrayRandomize(
-			nn->layers[l].weights,
-			wfrom,
-			wto,
-			nn->layers[l+1].size * nn->layers[l].size
-		);
+		size_t lsize = nn.layers[l].size;
+		size_t nlsize = nn.layers[l+1].size;
 
-		ArrayRandomize(
-			nn->layers[l].biases,
-			bfrom,
-			bto,
-			nn->layers[l+1].size
-		);
+		ArrayRandomize(nn.layers[l].weights, wfrom, wto, nlsize*lsize);
+		ArrayRandomize(nn.layers[l].biases, bfrom, bto, nlsize);
 	}
 }

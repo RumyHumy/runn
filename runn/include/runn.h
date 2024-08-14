@@ -83,6 +83,7 @@ typedef struct NeuralNetwork
 {
 	size_t   lcount;
 	NNLayer *layers;
+	float *buffer[2];
 } NeuralNetwork;
 
 bool NNAlloc(
@@ -91,16 +92,23 @@ bool NNAlloc(
 	NNLayerParams lparams[]);
 
 // Can be in == out
-void NNLayerForward(NeuralNetwork *nn, size_t lindex, float *in, float *out);
+void NNLayerForward(NeuralNetwork nn, size_t lindex, float *in, float *out);
 
 // Can NOT be in == out
 void NNLayerBackwardGD(
-	NeuralNetwork *nn, size_t lindex, float gradOut[], float gradIn[], float lrate);
+	NeuralNetwork nn, size_t lindex, float gradOut[], float gradIn[], float lrate);
 
 void NNFree(NeuralNetwork *nn);
 
-void NNForward(NeuralNetwork *nn, float in[], float out[]);
+void NNForward(NeuralNetwork nn, float in[], float out[]);
 
-void NNShuffle(NeuralNetwork *nn, float wfrom, float wto, float bfrom, float bto);
+void NNBackwardGD(
+	NeuralNetwork nn,
+	float out[],
+	float eIn[],
+	float eOut[],
+	float lrate);
+
+void NNShuffle(NeuralNetwork nn, float wfrom, float wto, float bfrom, float bto);
 
 #endif /* RUNN_H */

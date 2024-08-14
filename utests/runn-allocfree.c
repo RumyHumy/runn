@@ -37,7 +37,7 @@ bool UTRunnAllocFree()
 
 	float from = -1.0, to = 1.0;
 
-	NNShuffle(&nn, from, to, from, to);
+	NNShuffle(nn, from, to, from, to);
 	
 	printf("  Layer 1 Weights:\n");
 	LogMat(nn.layers[0].weights, 3, 2);
