@@ -3,8 +3,9 @@
 #include <stdio.h>
 
 bool UTRunnAllocFree();
-bool UTRunnXor();
-bool UTRunnTrainFuncXor();
+bool UTRunnTrainXor();
+bool UTRunnBatchesXor();
+bool UTRunnMimic();
 
 int main()
 {
@@ -12,8 +13,9 @@ int main()
 
 	bool flag =
 		   UTRunnAllocFree()
-		&& UTRunnXor()
-		&& UTRunnTrainFuncXor();
+		&& UTRunnTrainXor()
+		&& UTRunnBatchesXor();
+		//&& UTRunnMimic();
 
 	return !flag;
 }

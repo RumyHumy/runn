@@ -130,6 +130,7 @@ void NNLayerForward(NeuralNetwork nn, size_t lindex, float *in, float *out)
 	NNLayer layer = nn.layers[lindex];
 	size_t size = nn.layers[lindex].size;
 	size_t nsize = nn.layers[lindex+1].size;
+
 	// Setting dense layer X
 	for (int r = 0; r < size; r++)
 		layer.denseIn[r] = in[r];
@@ -153,34 +154,32 @@ void NNLayerBackwardGD(
 	NNLayer layer = nn.layers[lindex];
 	size_t size = nn.layers[lindex].size;
 	size_t nsize = nn.layers[lindex+1].size;
-	// Activation layer
-	// Xa - activation layer in 
-	// dE/dXa = dE/dY * f'(Xa)
-	float *gradDenseOut = calloc(nsize, sizeof(*gradDenseOut));
-	for (size_t i = 0; i < nsize; i++)
-		gradDenseOut[i] = gradOut[i] * layer.activation.deriv(layer.activIn[i]);
 
-	// Dense layer
-	// X - dense layer in 
-	// dE/dW = dE/dY * X^T 
-	// W = W' - lrate * dE/dW
-	// B = B' - lrate * dE/dW
 	for (int i = 0; i < nsize; i++)
 	{
+		// Activation layer
+		// Xa - activation layer in 
+		// dE/dXa = dE/dY * f'(Xa)
+		nn.buffer[2][i] = gradOut[i] * layer.activation.deriv(layer.activIn[i]);
+
+		// Dense layer
+		// X - dense layer in 
+		// dE/dW = dE/dY dot X^T 
+		// W = W' - lrate * dE/dW
+		// B = B' - lrate * dE/dW
 		for (int j = 0; j < size; j++)
-			layer.weights[i*size+j] -= lrate * gradDenseOut[i] * layer.denseIn[j];
-		layer.biases[i] -= lrate * gradDenseOut[i];
+			layer.weights[i*size+j] -= lrate * nn.buffer[2][i] * layer.denseIn[j];
+		layer.biases[i] -= lrate * nn.buffer[2][i];
 	}
 
 	// Return gradIn
+	// dE/dX = W^T dot dE/dY
 	for (int i = 0; i < size; i++)
 	{
 		gradIn[i] = 0.0;
 		for (int j = 0; j < nsize; j++)
-			gradIn[i] += layer.weights[j*nsize+i] * gradDenseOut[j];
+			gradIn[i] += layer.weights[j*size+i] * nn.buffer[2][j];
 	}
-
-	free(gradDenseOut);
 }
 
 bool NNAlloc(
@@ -218,8 +217,9 @@ bool NNAlloc(
 
 	nn->buffer[0] = calloc(maxLayerSize, sizeof(**nn->buffer));
 	nn->buffer[1] = calloc(maxLayerSize, sizeof(**nn->buffer));
+	nn->buffer[2] = calloc(maxLayerSize, sizeof(**nn->buffer));
 
-	if (!nn->buffer[0] || !nn->buffer[1])
+	if (!nn->buffer[0] || !nn->buffer[1] || !nn->buffer[2])
 		return false;
 
 	return true;
@@ -264,8 +264,21 @@ void NNBackwardGD(
 
 	LossMSEDeriv(nn.layers[nn.lcount-1].size, out, eOut, nn.buffer[nn.lcount%2]);
 
-	for (size_t l = nn.lcount-2; l != 0; l--)
+	for (size_t l = nn.lcount-2; l != -1; l--)
+	{
+		//printf("%d: \n", l);
+		//printf("  gradOut: \n");
+		//for (int k = 0; k < nn.layers[l].size; k++)
+		//	printf("    %f\n", nn.buffer[l%2][k]);
+
 		NNLayerBackwardGD(nn, l, nn.buffer[l%2], nn.buffer[(l+1)%2], lrate);
+
+		//printf("  gradOut: \n");
+		//for (int k = 0; k < nn.layers[l].size; k++)
+		//	printf("    %f\n", nn.buffer[l%2][k]);
+	}
+
+	//printf("SIZE: %d\n", nn.lcount);
 }
 
 void ArrayRandomize(float *arr, float from, float to, size_t size)

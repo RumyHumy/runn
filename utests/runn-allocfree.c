@@ -5,15 +5,10 @@
 
 #include "runn.h"
 
-void LogMat(float mat[], size_t rows, size_t cols)
+void LogMat(float *mat, size_t rows, size_t cols)
 {
-	for (size_t r = 0; r < rows; r++)
-	{
-		printf("    ");
-		for (size_t c = 0; c < cols; c++)
-			printf("%f ", mat[r*cols+c]);
-		printf("\n");
-	}
+	for (size_t i = 0; i < rows*cols; i++)
+		printf("%s%f%s", (i%cols==0 ? "    " : ""), mat[i], (i%cols==cols-1 ? "\n" : " "));
 }
 
 bool UTRunnAllocFree()

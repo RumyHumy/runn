@@ -2,7 +2,7 @@
 
 CC = gcc
 
-CFLAGS = -Wall -g -std=c99 -I./runn/include
+CFLAGS = -Wall -std=c99 -I./runn/include
 
 LDFLAGS = -lm
 

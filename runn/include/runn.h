@@ -83,7 +83,7 @@ typedef struct NeuralNetwork
 {
 	size_t   lcount;
 	NNLayer *layers;
-	float *buffer[2];
+	float *buffer[3];
 } NeuralNetwork;
 
 bool NNAlloc(
